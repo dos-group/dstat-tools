@@ -95,7 +95,7 @@ def read_options_and_arguments
     end
 
     options[:inverted] = false
-    opts.on( '-i', '--inverted', '') do
+    opts.on( '-i', '--inverted', 'Invert the graph') do
       options[:inverted] = true
     end    
 
