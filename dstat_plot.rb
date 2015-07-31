@@ -10,10 +10,11 @@ require 'optparse'
 # Zeit auf x Achse -> epochen
 #
 
-def plot(dataSet, category, field)
+def plot(dataSets, category, field)
   Gnuplot.open do |gp|
+    dataSet = dataSets.first
+
     Gnuplot::Plot.new(gp) do |plot|
-  
       plot.title  "#{category}[#{field}] over time"
       plot.xlabel "Index"
       plot.ylabel "#{category}: #{field}"
@@ -36,7 +37,7 @@ end
 
 def read_csv(category, field, files)
   puts "Reading from csv."
-  dataSet = Array.new
+  dataSets = [] # dataSet = [[dataSet0],[dataSet1],[dataSet2]]
 
   CSV.open(files.first) { |file| # set a mode?
     for i in 0..4 # skip the first 5 rows, nothing in there that interests us
@@ -59,14 +60,17 @@ def read_csv(category, field, files)
   		exit 1
   	end
 
+    # get all the interesting values and put them in an array
   	currentRow = file.shift
+    dataSet = []
     until file.eof do
       dataSet.push currentRow.at(fieldIndex)
       currentRow = file.shift
     end
+    dataSets.push dataSet
   }
 
-  dataSet
+  dataSets # dataSet = [[dataSet0],[dataSet1],[dataSet2]]
 end
 
 
@@ -117,6 +121,6 @@ def read_arguments
 end
 
 options = read_arguments
-dataSet = read_csv(options[:category], options[:field], options[:files])
-puts dataSet.inspect
-plot(dataSet, options[:category], options[:field])
+dataSets = read_csv(options[:category], options[:field], options[:files])
+puts dataSets.inspect
+plot(dataSets, options[:category], options[:field])
