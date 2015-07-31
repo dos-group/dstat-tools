@@ -12,8 +12,6 @@ require 'optparse'
 
 def plot(dataSets, category, field)
   Gnuplot.open do |gp|
-    dataSet = dataSets.first
-
     Gnuplot::Plot.new(gp) do |plot|
       plot.title  "#{category}[#{field}] over time"
       plot.xlabel "Index"
@@ -22,14 +20,17 @@ def plot(dataSets, category, field)
       #x = (0..50).collect { |v| v.to_f }
       #y = x.collect { |v| v ** 2 }
 
-      x = (0..dataSet.count-1).collect { |index| index }
-      y = dataSet.collect { |item| item }
-
-      plot.data << Gnuplot::DataSet.new([x, y]) do |ds|
-        # ds.with = "filledcurve x1"
-        # ds.with = "linespoint"
-        ds.with = "lines" 
-        ds.notitle
+      plot.data = []
+      dataSets.each do |dataSet|
+        x = (0..dataSet.count-1).collect { |index| index }
+        y = dataSet.collect { |item| item }
+        gnuplotData = Gnuplot::DataSet.new([x, y]) do |ds|
+          # ds.with = "filledcurve x1"
+          # ds.with = "linespoint"
+          ds.with = "lines"
+          ds.notitle
+        end
+        plot.data.push gnuplotData
       end
     end
   end
@@ -39,36 +40,38 @@ def read_csv(category, field, files)
   puts "Reading from csv."
   dataSets = [] # dataSet = [[dataSet0],[dataSet1],[dataSet2]]
 
-  CSV.open(files.first) { |file| # set a mode?
-    for i in 0..4 # skip the first 5 rows, nothing in there that interests us
-  		file.shift
-  	end
+  files.each do |file|
+    CSV.open(file) do |csvFile| # set a mode?
+      for i in 0..4 # skip the first 5 rows, nothing in there that interests us 
+    		csvFile.shift
+    	end
 
-    currentRow = file.shift
-    categoryIndex = currentRow.index(category)
-  	if categoryIndex == "null"
-  		puts "#{category} is not a valid parameter for 'category'. Item could not be found."
-      puts "Categories: #{row.inspect}"
-  		exit 1
-  	end
-  	
-  	currentRow = file.shift.drop(categoryIndex)
-  	fieldIndex =  categoryIndex + currentRow.index(field)
-  	if fieldIndex == "null"
-  		puts "#{field} is not a valid parameter for 'field'. Item could not be found."
-      puts "Fields: #{currentRow.inspect}"
-  		exit 1
-  	end
+      currentRow = csvFile.shift
+      categoryIndex = currentRow.index(category)
+    	if categoryIndex == "null"
+    		puts "#{category} is not a valid parameter for 'category'. Item could not be found."
+        puts "Categories: #{row.inspect}"
+    		exit 1
+    	end
+    	
+    	currentRow = csvFile.shift.drop(categoryIndex)
+    	fieldIndex =  categoryIndex + currentRow.index(field)
+    	if fieldIndex == "null"
+    		puts "#{field} is not a valid parameter for 'field'. Item could not be found."
+        puts "Fields: #{currentRow.inspect}"
+    		exit 1
+    	end
 
-    # get all the interesting values and put them in an array
-  	currentRow = file.shift
-    dataSet = []
-    until file.eof do
-      dataSet.push currentRow.at(fieldIndex)
-      currentRow = file.shift
+      # get all the interesting values and put them in an array
+    	currentRow = csvFile.shift
+      dataSet = []
+      until csvFile.eof do
+        dataSet.push currentRow.at(fieldIndex)
+        currentRow = csvFile.shift
+      end
+      dataSets.push dataSet
     end
-    dataSets.push dataSet
-  }
+  end
 
   dataSets # dataSet = [[dataSet0],[dataSet1],[dataSet2]]
 end
