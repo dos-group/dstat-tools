@@ -10,9 +10,9 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD directory | file1 file2 ...
     -h, --help                       Display this screen
 ```
 
-## Example
+(-c CATEGORY and -f FIELD are mandatory parameters)
 
-(-c CATEGORY nad -f FIELD are mandatory parameters)
+## Example
 
 ```
 ruby dstat_plot.rb -c "total cpu usage" -f "usr" tpch-10_flink-nativ_2015_07_23_14_48/
@@ -24,36 +24,36 @@ Categoriy | Field
 ----------|------
 epoch | epoch
 memory usage | used
-| buff
-| cach
-| free
+ | buff
+ | cach
+ | free
 swap | used
-|free
+ |free
 system | int
-|csv
+ |csv
 paging | in
-|out
+ |out
 total cpu usage | usr
-| sys
-| idl
-| wai
-| hiq
-| siq
+ | sys
+ | idl
+ | wai
+ | hiq
+ | siq
 cpuN usage | usr
-| sys
-| idl
-| wai
-| hiq
-| siq
+ | sys
+ | idl
+ | wai
+ | hiq
+ | siq
 net/total | recv
-| send
+ | send
 net/eth0 | recv
-| send
+ | send
 dsk/total | read
-| writ
+ | writ
 dsk/sda | read
-| writ
+ | writ
 io/total | read
-| writ
+ | writ
 io/sda | read
-| writ
+ | writ
