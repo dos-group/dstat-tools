@@ -9,3 +9,51 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD directory | file1 file2 ...
     -f, --field FIELD                Select the field
     -h, --help                       Display this screen
 ```
+
+## Example
+
+(-c CATEGORY nad -f FIELD are mandatory parameters)
+
+```
+ruby dstat_plot.rb -c "total cpu usage" -f "usr" tpch-10_flink-nativ_2015_07_23_14_48/
+```
+
+N is the cpu core index for 0..n cores
+
+Categoriy | Field
+----------|------
+epoch | epoch
+memory usage | used
+| buff
+| cach
+| free
+swap | used
+|free
+system | int
+|csv
+paging | in
+|out
+total cpu usage | usr
+| sys
+| idl
+| wai
+| hiq
+| siq
+cpuN usage | usr
+| sys
+| idl
+| wai
+| hiq
+| siq
+net/total | recv
+| send
+net/eth0 | recv
+| send
+dsk/total | read
+| writ
+dsk/sda | read
+| writ
+io/total | read
+| writ
+io/sda | read
+| writ
