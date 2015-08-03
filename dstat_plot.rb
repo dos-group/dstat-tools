@@ -1,5 +1,5 @@
-require 'Gnuplot'
-require 'CSV'
+require 'gnuplot'
+require 'csv'
 require 'optparse'
 
 # dstat_plot
