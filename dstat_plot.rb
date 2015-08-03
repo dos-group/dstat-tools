@@ -94,7 +94,7 @@ def read_options_and_arguments
 
   optparse = OptionParser.new do |opts|
     # banner that is displayed at the top
-    opts.banner = "Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD file1 file2 file3 | directory"
+    opts.banner = "Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD directory | file1 file2 ..."
 
     ### options and what they do
     opts.on('-v', '--verbose', 'Output more information') do
