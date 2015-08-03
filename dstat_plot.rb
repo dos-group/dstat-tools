@@ -12,7 +12,7 @@ $verbose = false
 def plot(dataSets, category, field, dry)
   Gnuplot.open do |gp|
     Gnuplot::Plot.new(gp) do |plot|
-      plot.title  "#{category}[#{field}] over time"
+      plot.title dataSets.pop
       plot.xlabel "Index"
       plot.ylabel "#{category}: #{field}"
       plot.key "out vert right top"
@@ -22,24 +22,34 @@ def plot(dataSets, category, field, dry)
         plot.output "#{category}-#{field}.png"
       end
 
-      plot.data = []
-      dataSets.each do |gpDataSet|
-        # gpDataSet.linewidth = 2
-        plot.data.push gpDataSet
-      end
+      plot.data = dataSets
     end
   end
 end
 
 def read_csv(category, field, files, no_key)
   if $verbose then puts "Reading from csv." end
-  gpDataSets = [] # gpDataSets = [Gnuplot::DataSet0,Gnuplot::DataSet1,Gnuplot::DataSet2]
+  gpDataSets = [] # gpDataSets = [Gnuplot::DataSet0,Gnuplot::DataSet1, ... , plotTitle]
+
+  plotTitle = "#{category}-#{field} over time" + ' \n '
+  plotTitleNotSet = true
+
 
   files.each do |file|
     CSV.open(file) do |csvFile|
-      # skip the first 5 rows, nothing in there that interests us 
+      # skip the first 2 rows, nothing in there that interests us
+      # then get some data for the title then skip the empty row
+      # TODO: this is could be done better
       for i in 0..4 do
-    	  csvFile.shift
+        currentRow = csvFile.shift
+        if plotTitleNotSet
+          if i == 2
+            plotTitle += "(Host: #{currentRow[1]} User: #{currentRow[6]}"
+          elsif i == 3
+            plotTitle += " Date: #{currentRow.last})"
+            plotTitleNotSet = false
+          end
+        end
       end
 
       currentRow = csvFile.shift
@@ -83,7 +93,9 @@ def read_csv(category, field, files, no_key)
 
   if $verbose then puts "gpDataSets: #{gpDataSets.count}" end
 
-  gpDataSets # gpDataSets = [Gnuplot::DataSet0,Gnuplot::DataSet1,Gnuplot::DataSet2]
+  gpDataSets.push plotTitle # the title of the entire plot is stored as the last element of the gpDataSets Array     
+
+  gpDataSets # gpDataSets = [Gnuplot::DataSet0,Gnuplot::DataSet1,..., plotTitle]
 end
 
 
