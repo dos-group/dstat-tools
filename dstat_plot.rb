@@ -1,3 +1,5 @@
+#! /usr/bin/ruby
+
 require 'gnuplot'
 require 'csv'
 require 'optparse'
@@ -122,7 +124,7 @@ def read_options_and_arguments
     end
 
     options[:dry] = false
-    opts.on('-d', '--dry', 'Dry run. Plot is not saved as file but displayed with gnuplot') do
+    opts.on('-d', '--dry', 'Dry run. Plot is not saved to file but displayed with gnuplot') do
       options[:dry] = true
     end
 
