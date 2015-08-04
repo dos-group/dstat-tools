@@ -27,7 +27,7 @@ For linux the procedure is
 ### Usage
 
 ```
-Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD directory | file1 file2 ...
+Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...]
     -v, --verbose                    Output more information
     -i, --inverted                   Invert the graph
     -n, --no-key                     No plot key is printed
