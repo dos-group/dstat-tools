@@ -39,48 +39,40 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...
 
 (-c CATEGORY and -f FIELD are mandatory parameters)
 
+The plot is saved as category-field.png in the folder where the csv files are located unless -o PATH explicitly specifies a different destination.
+
 ### Example
 
 ```
 ruby dstat_plot.rb -c "total cpu usage" -f "usr" tpch-10_flink-nativ_2015_07_23_14_48/
 ```
 
-N is the cpu core index for 0..n cores
+### Possible category - field combinations
 
-Categoriy | Field
-----------|------
-epoch | epoch
-memory usage | used
- | buff
- | cach
- | free
-swap | used
- |free
-system | int
- |csv
-paging | in
- |out
-total cpu usage | usr
- | sys
- | idl
- | wai
- | hiq
- | siq
+(N is the cpu core index for 0..n cores)
+
+Categoriy | Field |   | Categoriy | Field |
+----------|-------|---| ----------|-------|
+epoch     | epoch |   | net/total | recv
+memory usage | used | |           | send
+          | buff  |   | net/eth0  | recv
+          | cach  |   |           | send
+          | free  |   | dsk/total | read
+swap      | used  |   |           | writ
+          |free   |   | dsk/sda   | read
+system    | int   |   |           | writ
+          |csv    |   | io/total  | read
+paging    | in    |   |           | writ
+          |out    |   | io/sda    | read
+total cpu usage   | usr | |       | writ
+          | sys
+          | idl
+          | wai
+          | hiq
+          | siq
 cpuN usage | usr
- | sys
- | idl
- | wai
- | hiq
- | siq
-net/total | recv
- | send
-net/eth0 | recv
- | send
-dsk/total | read
- | writ
-dsk/sda | read
- | writ
-io/total | read
- | writ
-io/sda | read
- | writ
+          | sys
+          | idl
+          | wai
+          | hiq
+          | siq
