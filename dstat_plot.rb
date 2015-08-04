@@ -43,32 +43,31 @@ def read_csv(category, field, files, no_key)
 
   files.each do |file|
     CSV.open(file) do |csvFile|
-      # skip the first 2 rows, nothing in there that interests us
-      # then get some data for the title then skip the empty row
-      # TODO: this is could be done better
-      for i in 0..4 do
-        currentRow = csvFile.shift
+      currentRow = csvFile.shift
+      # loop until row with "epoch" in it is reached and read some meta data 
+      # but only for the first file since there can only be one title
+      while currentRow.index("epoch").nil? do
         if plotTitleNotSet
-          if i == 2
+          if currentRow.index("Host:") != nil
             plotTitle += "(Host: #{currentRow[1]} User: #{currentRow[6]}"
-          elsif i == 3
+          elsif currentRow.index("Cmdline:") != nil
             plotTitle += " Date: #{currentRow.last})"
             plotTitleNotSet = false
           end
         end
+        currentRow = csvFile.shift
       end
 
-      currentRow = csvFile.shift
       categoryIndex = currentRow.index(category)
-    	if categoryIndex == "null"
+    	if categoryIndex.nil?
     		puts "#{category} is not a valid parameter for 'category'. Value could not be found."
         puts "Categories: #{row.inspect}"
     		exit 1
     	end
     	
-    	currentRow = csvFile.shift.drop(categoryIndex)
-    	fieldIndex =  categoryIndex + currentRow.index(field)
-    	if fieldIndex == "null"
+    	currentRow_at_category = csvFile.shift.drop(categoryIndex)
+    	fieldIndex =  categoryIndex + currentRow_at_category.index(field)
+    	if fieldIndex.nil?
     		puts "#{field} is not a valid parameter for 'field'. Value could not be found."
         puts "Fields: #{currentRow.inspect}"
     		exit 1
