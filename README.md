@@ -46,7 +46,7 @@ The plot is saved as category-field.png in the folder where the csv files are lo
 ### Example
 
 ```
-ruby dstat_plot.rb -c "total cpu usage" -f "usr" tpch-10_flink-nativ_2015_07_23_14_48/
+ruby dstat_plot.rb -c "total cpu usage" -f "usr" example.csv
 ```
 
 ### Possible category - field combinations
