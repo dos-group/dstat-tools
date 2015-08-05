@@ -23,7 +23,7 @@ def plot(dataSets, category, field, dry, target_dir)
       
       unless dry
         plot.terminal 'png size 1600,800 enhanced font "Helvetica,11"'
-        filename = "#{category}-#{field}.png"
+        filename = "#{category}-#{field}.png".sub("/", "_")
         plot.output filename
         puts "Saving plot to '#{target_dir}/#{filename}'"
       end
