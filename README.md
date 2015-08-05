@@ -34,6 +34,8 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...
     -i, --inverted                   Invert the graph
     -n, --no-key                     No plot key is printed
     -d, --dry                        Dry run. Plot is not saved to file but displayed with gnuplot
+    -o, --output PATH                Path where the graph should be saved to, default is csv file directory
+    -y, --y-range RANGE              Sets the range of the y-axis
     -c, --category CATEGORY          Select the category
     -f, --field FIELD                Select the field
     -h, --help                       Display this screen
