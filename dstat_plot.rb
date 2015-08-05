@@ -174,15 +174,17 @@ def read_options_and_arguments
   # and the current working directory is used
   if ARGV.empty? then ARGV.push "." end
 
+  files = []
   if File.directory?(ARGV.last) then
     options[:target_dir] = ARGV.last.chomp("/") # cuts of "/" from the end if present
     files = Dir.glob "#{options[:target_dir]}/*.csv"
-    puts "Plotting data from #{files.count} files."
   else
+    options[:target_dir] = File.dirname ARGV.first
     ARGV.each do |filename|
-      files.push(filename)
+      files.push filename
     end
   end
+  puts "Plotting data from #{files.count} file(s)."
   options[:files] = files
   if $verbose then puts "files: #{files.count} #{files.inspect}" end
 
