@@ -22,6 +22,8 @@ For linux the procedure is
     sudo apt-get install gnuplot
 2. Install gnuplot gem:
     gem install gnuplot
+3. Install csv gem
+    gem install fastercsv
 ```
 
 ### Usage
