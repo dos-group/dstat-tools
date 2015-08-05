@@ -65,16 +65,18 @@ def read_csv(category, field, files, no_plot_key, y_range)
       categoryIndex = currentRow.index(category)
     	if categoryIndex.nil?
     		puts "#{category} is not a valid parameter for 'category'. Value could not be found."
-        puts "Categories: #{row.inspect}"
+        puts "Allowed categories: #{currentRow.inspect}"
     		exit 1
     	end
     	
     	currentRow_at_category = csvFile.shift.drop(categoryIndex)
-    	fieldIndex =  categoryIndex + currentRow_at_category.index(field)
-    	if fieldIndex.nil?
+      field_offset = currentRow_at_category.index(field)
+    	if field_offset.nil?
     		puts "#{field} is not a valid parameter for 'field'. Value could not be found."
-        puts "Fields: #{currentRow.inspect}"
+        puts "Allowed fields: #{currentRow.inspect}"
     		exit 1
+      else
+        fieldIndex = categoryIndex + field_offset
     	end
 
       # get all the interesting values and put them in an array
