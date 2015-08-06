@@ -36,10 +36,11 @@ def plot(dataset_container, category, field, dry, target_dir)
   end
 end
 
-def read_csv(category, field, files, no_plot_key, y_range)
+def read_csv(category, field, files, no_plot_key, y_range, inversion)
   if $verbose then puts "Reading from csv." end
 
   plotTitle = "#{category}-#{field} over time" + ' \n '
+  if inversion != 0.0 then plotTitle += '[INVERTED] \n' end
   plotTitleNotSet = true
 
   datasets = []
@@ -82,14 +83,16 @@ def read_csv(category, field, files, no_plot_key, y_range)
         fieldIndex = categoryIndex + field_offset
     	end
 
+      if inversion != 0.0 then y_range = {:enforced => true, :max => inversion + 5} end
+
       # get all the interesting values and put them in an array
     	currentRow = csvFile.shift
       unless epoch_index.nil? then time_offset = currentRow.at(epoch_index).to_f end
       timecode = []
       values = []
       until csvFile.eof do
-        values.push currentRow.at(fieldIndex)
         unless epoch_index.nil? then timecode.push(currentRow.at(epoch_index).to_f - time_offset) end
+        values.push (currentRow.at(fieldIndex).to_f - inversion).abs
         if !y_range[:enforced]
           if values.last.to_f >= y_range[:max] then autoscale = true end
         end
@@ -130,9 +133,11 @@ def read_options_and_arguments
       $verbose = true
     end
 
-    options[:inverted] = false
-    opts.on('-i', '--inverted', 'Invert the graph') do
-      options[:inverted] = true
+    options[:inversion] = 0.0
+    opts.on('-i', '--invert [VALUE]', 'Invert the graph such that inverted(x) = VALUE - f(x), default is 100') do |value|
+      options[:inversion] = value.nil? ? 100.0 : value.to_f
+      puts value
+      puts options[:inversion]
     end
 
     options[:no_plot_key] = false
@@ -205,5 +210,5 @@ def read_options_and_arguments
 end
 
 options = read_options_and_arguments
-dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range])
+dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range], options[:inversion])
 plot(dataset_container, options[:category], options[:field], options[:dry], options[:target_dir])
