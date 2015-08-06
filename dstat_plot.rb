@@ -98,10 +98,6 @@ def read_csv(category, field, files, no_plot_key, y_range)
 
       if epoch_index.nil? then timecode = (0..values.count - 1).to_a end
 
-      puts epoch_index.inspect
-      puts time_offset
-      puts timecode.inspect
-
       # create the GnuplotDataSet that is going to be printed
       dataset = Gnuplot::DataSet.new([timecode, values]) do |gp_dataSet|
         gp_dataSet.with = "lines"
