@@ -17,7 +17,7 @@ def plot(dataset_container, category, field, dry, target_dir)
   Gnuplot.open do |gp|
     Gnuplot::Plot.new(gp) do |plot|
       plot.title dataset_container[:plotTitle]
-      plot.xlabel "Index"
+      plot.xlabel "Time in seconds"
       plot.ylabel "#{category}: #{field}"
       range_max = dataset_container[:y_range][:max]
       plot.yrange "[0:#{range_max}]"
@@ -62,6 +62,9 @@ def read_csv(category, field, files, no_plot_key, y_range)
         currentRow = csvFile.shift
       end
 
+      # find the epoch category == nil if not found
+      epoch_index = currentRow.index("epoch")
+
       categoryIndex = currentRow.index(category)
     	if categoryIndex.nil?
     		puts "#{category} is not a valid parameter for 'category'. Value could not be found."
@@ -81,18 +84,22 @@ def read_csv(category, field, files, no_plot_key, y_range)
 
       # get all the interesting values and put them in an array
     	currentRow = csvFile.shift
+      unless epoch_index.nil? then time_offset = currentRow.at(epoch_index).to_f end
+      timecode = []
       values = []
       until csvFile.eof do
         values.push currentRow.at(fieldIndex)
+        unless epoch_index.nil? then timecode.push(currentRow.at(epoch_index).to_f - time_offset) end
         if !y_range[:enforced]
           if values.last.to_f >= y_range[:max] then autoscale = true end
         end
         currentRow = csvFile.shift
       end
 
+      if epoch_index.nil? then timecode = (0..values.count - 1).to_a end
+
       # create the GnuplotDataSet that is going to be printed
-      x = (0..values.count - 1).to_a
-      dataset = Gnuplot::DataSet.new([x, values]) do |gp_dataSet|
+      dataset = Gnuplot::DataSet.new([timecode, values]) do |gp_dataSet|
         gp_dataSet.with = "lines"
         if no_plot_key then
           gp_dataSet.notitle
