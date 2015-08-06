@@ -31,7 +31,7 @@ For linux the procedure is
 ```
 Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...]
     -v, --verbose                    Output more information
-    -i, --inverted                   Invert the graph
+    -i, --invert [VALUE]             Invert the graph such that inverted(x) = VALUE - f(x), default is 100
     -n, --no-key                     No plot key is printed
     -d, --dry                        Dry run. Plot is not saved to file but displayed with gnuplot
     -o, --output PATH                Path where the graph should be saved to, default is csv file directory
