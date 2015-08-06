@@ -26,7 +26,7 @@ def plot(dataset_container, category, field, dry, target_dir)
       
       unless dry
         plot.terminal 'png size 1600,800 enhanced font "Helvetica,11"'
-        filename = "#{category}-#{field}.png".sub("/", "_")
+        filename = dataset_container[:filename]
         plot.output filename
         puts "Saving plot to '#{target_dir}/#{filename}'"
       end
@@ -36,11 +36,20 @@ def plot(dataset_container, category, field, dry, target_dir)
   end
 end
 
-def read_csv(category, field, files, no_plot_key, y_range)
+def read_csv(category, field, files, no_plot_key, y_range, inversion)
   if $verbose then puts "Reading from csv." end
 
-  plotTitle = "#{category}-#{field} over time" + ' \n '
-  plotTitleNotSet = true
+  if inversion != 0.0
+    y_range = {:enforced => true, :max => inversion + 5}
+    plotTitle = "#{category}-#{field} inverted"
+  else
+    plotTitle = "#{category}-#{field}"
+  end
+  
+  filename = "#{plotTitle}.png".sub("/", "_")
+
+  plotTitle +=  ' over time \n'
+  plotTitle_not_complete = true
 
   datasets = []
   autoscale = false
@@ -51,12 +60,12 @@ def read_csv(category, field, files, no_plot_key, y_range)
       # loop until row with "epoch" in it is reached and read some meta data 
       # but only for the first file since there can only be one title
       while currentRow.index("epoch").nil? do
-        if plotTitleNotSet
+        if plotTitle_not_complete
           if currentRow.index("Host:") != nil
             plotTitle += "(Host: #{currentRow[1]} User: #{currentRow[6]}"
           elsif currentRow.index("Cmdline:") != nil
             plotTitle += " Date: #{currentRow.last})"
-            plotTitleNotSet = false
+            plotTitle_not_complete = false
           end
         end
         currentRow = csvFile.shift
@@ -88,8 +97,8 @@ def read_csv(category, field, files, no_plot_key, y_range)
       timecode = []
       values = []
       until csvFile.eof do
-        values.push currentRow.at(fieldIndex)
         unless epoch_index.nil? then timecode.push(currentRow.at(epoch_index).to_f - time_offset) end
+        values.push (currentRow.at(fieldIndex).to_f - inversion).abs
         if !y_range[:enforced]
           if values.last.to_f >= y_range[:max] then autoscale = true end
         end
@@ -114,7 +123,7 @@ def read_csv(category, field, files, no_plot_key, y_range)
 
   if $verbose then puts "datasets: #{datasets.count} \nplotTitle: #{plotTitle} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
 
-  dataset_container = {:datasets => datasets, :plotTitle => plotTitle, :y_range => y_range, :autoscale => autoscale}
+  dataset_container = {:datasets => datasets, :plotTitle => plotTitle, :y_range => y_range, :autoscale => autoscale, :filename => filename}
 end
 
 
@@ -130,9 +139,9 @@ def read_options_and_arguments
       $verbose = true
     end
 
-    options[:inverted] = false
-    opts.on('-i', '--inverted', 'Invert the graph') do
-      options[:inverted] = true
+    options[:inversion] = 0.0
+    opts.on('-i', '--invert [VALUE]', 'Invert the graph such that inverted(x) = VALUE - f(x), default is 100') do |value|
+      options[:inversion] = value.nil? ? 100.0 : value.to_f
     end
 
     options[:no_plot_key] = false
@@ -205,5 +214,5 @@ def read_options_and_arguments
 end
 
 options = read_options_and_arguments
-dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range])
+dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range], options[:inversion])
 plot(dataset_container, options[:category], options[:field], options[:dry], options[:target_dir])
