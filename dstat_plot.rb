@@ -140,8 +140,8 @@ def read_options_and_arguments
     end
 
     options[:inversion] = 0.0
-    opts.on('-i', '--invert [VALUE]', 'Invert the graph such that inverted(x) = VALUE - f(x),', 'default is 100.') do |value|
-      options[:inversion] = value.nil? ? 100.0 : value.to_f
+    opts.on('-i', '--invert [VALUE]', Float, 'Invert the graph such that inverted(x) = VALUE - f(x),', 'default is 100.') do |value|
+      options[:inversion] = value.nil? ? 100.0 : value
     end
 
     options[:no_plot_key] = false
@@ -160,8 +160,8 @@ def read_options_and_arguments
     end
 
     options[:y_range] = {:max => 105.0, :enforced => false}
-    opts.on('-y', '--y-range RANGE', 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
-      options[:y_range] = {:max => range.to_f, :enforced => true}
+    opts.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
+      options[:y_range] = {:max => range, :enforced => true}
     end
 
     options[:category] = nil
