@@ -77,7 +77,7 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
       categoryIndex = currentRow.index(category)
     	if categoryIndex.nil?
     		puts "#{category} is not a valid parameter for 'category'. Value could not be found."
-        puts "Allowed categories: #{currentRow.inspect}"
+        puts "Allowed categories: #{currentRow.reject{ |elem| elem == nil }.inspect}"
     		exit 1
     	end
     	
@@ -85,7 +85,7 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
       field_offset = currentRow_at_category.index(field)
     	if field_offset.nil?
     		puts "#{field} is not a valid parameter for 'field'. Value could not be found."
-        puts "Allowed fields: #{currentRow.inspect}"
+        puts "Allowed fields: #{currentRow_at_category.inspect}"
     		exit 1
       else
         fieldIndex = categoryIndex + field_offset
@@ -140,42 +140,42 @@ def read_options_and_arguments
     end
 
     options[:inversion] = 0.0
-    opts.on('-i', '--invert [VALUE]', 'Invert the graph such that inverted(x) = VALUE - f(x), default is 100') do |value|
+    opts.on('-i', '--invert [VALUE]', 'Invert the graph such that inverted(x) = VALUE - f(x),', 'default is 100.') do |value|
       options[:inversion] = value.nil? ? 100.0 : value.to_f
     end
 
     options[:no_plot_key] = false
-    opts.on('-n','--no-key', 'No plot key is printed') do
+    opts.on('-n','--no-key', 'No plot key is printed.') do
       options[:no_plot_key] = true
     end
 
     options[:dry] = false
-    opts.on('-d', '--dry', 'Dry run. Plot is not saved to file but displayed with gnuplot') do
+    opts.on('-d', '--dry', 'Dry run. Plot is not saved to file but instead displayed with gnuplot.') do
       options[:dry] = true
     end
 
     options[:output] = nil
-    opts.on('-o','--output PATH', 'Path where the graph should be saved to, default is csv file directory') do |path|
+    opts.on('-o','--output DIR', 'Directory that plot should be saved to,', 'default is csv file directory.') do |path|
       options[:output] = path
     end
 
     options[:y_range] = {:max => 105.0, :enforced => false}
-    opts.on('-y', '--y-range RANGE', 'Sets the y-axis range. Default is 105 or "autoscale" if a value exceeds the set range') do |range|
+    opts.on('-y', '--y-range RANGE', 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
       options[:y_range] = {:max => range.to_f, :enforced => true}
     end
 
     options[:category] = nil
-    opts.on('-c', '--category CATEGORY', 'Select the category') do |category|
+    opts.on('-c', '--category CATEGORY', 'Select the category.') do |category|
       options[:category] = category
     end
 
     options[:field] = nil
-    opts.on('-f', '--field FIELD' , 'Select the field') do |field|
+    opts.on('-f', '--field FIELD' , 'Select the field.') do |field|
       options[:field] = field
     end
 
     # This displays the help screen
-    opts.on('-h', '--help', 'Display this screen' ) do
+    opts.on_tail('-h', '--help', 'Display this screen.' ) do
       puts opts
       exit
     end
@@ -187,7 +187,13 @@ def read_options_and_arguments
   # left is the list of files
   optparse.parse!
   if $verbose then puts "options: #{options.inspect}" end
-  
+
+  if options[:category].nil? || options[:category].nil?
+    puts "[Error] -c CATEGORY and -f FIELD are mandatory parameters.\n\n"
+    puts optparse
+    exit
+  end
+
   # if ARGV is empty at this point no directory or file(s) is specified
   # and the current working directory is used
   if ARGV.empty? then ARGV.push "." end
