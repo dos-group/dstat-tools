@@ -16,7 +16,7 @@ def plot(dataset_container, category, field, dry, target_dir)
 
   Gnuplot.open do |gp|
     Gnuplot::Plot.new(gp) do |plot|
-      plot.title dataset_container[:plotTitle]
+      plot.title dataset_container[:plot_title]
       plot.xlabel "Time in seconds"
       plot.ylabel "#{category}: #{field}"
       range_max = dataset_container[:y_range][:max]
@@ -41,15 +41,15 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
 
   if inversion != 0.0
     y_range = {:enforced => true, :max => inversion + 5}
-    plotTitle = "#{category}-#{field} inverted"
+    plot_title = "#{category}-#{field} inverted"
   else
-    plotTitle = "#{category}-#{field}"
+    plot_title = "#{category}-#{field}"
   end
   
-  filename = "#{plotTitle}.png".sub("/", "_")
+  filename = "#{plot_title}.png".sub("/", "_")
 
-  plotTitle +=  ' over time \n'
-  plotTitle_not_complete = true
+  plot_title +=  ' over time \n'
+  plot_title_not_complete = true
 
   datasets = []
   autoscale = false
@@ -60,12 +60,12 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
       # loop until row with "epoch" in it is reached and read some meta data 
       # but only for the first file since there can only be one title
       while currentRow.index("epoch").nil? do
-        if plotTitle_not_complete
+        if plot_title_not_complete
           if currentRow.index("Host:") != nil
-            plotTitle += "(Host: #{currentRow[1]} User: #{currentRow[6]}"
+            plot_title += "(Host: #{currentRow[1]} User: #{currentRow[6]}"
           elsif currentRow.index("Cmdline:") != nil
-            plotTitle += " Date: #{currentRow.last})"
-            plotTitle_not_complete = false
+            plot_title += " Date: #{currentRow.last})"
+            plot_title_not_complete = false
           end
         end
         currentRow = csvFile.shift
@@ -108,12 +108,12 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
       if epoch_index.nil? then timecode = (0..values.count - 1).to_a end
 
       # create the GnuplotDataSet that is going to be printed
-      dataset = Gnuplot::DataSet.new([timecode, values]) do |gp_dataSet|
-        gp_dataSet.with = "lines"
+      dataset = Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
+        gp_dataset.with = "lines"
         if no_plot_key then
-          gp_dataSet.notitle
+          gp_dataset.notitle
         else
-          gp_dataSet.title = File.basename file
+          gp_dataset.title = File.basename file
         end
       end
 
@@ -121,9 +121,9 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
     end
   end
 
-  if $verbose then puts "datasets: #{datasets.count} \nplotTitle: #{plotTitle} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
+  if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
 
-  dataset_container = {:datasets => datasets, :plotTitle => plotTitle, :y_range => y_range, :autoscale => autoscale, :filename => filename}
+  dataset_container = {:datasets => datasets, :plot_title => plot_title, :y_range => y_range, :autoscale => autoscale, :filename => filename}
 end
 
 
