@@ -50,6 +50,7 @@ The plot is saved as category-field.png in the folder where the csv files are lo
 ```
 ruby dstat_plot.rb -c "total cpu usage" -f "usr" example.csv
 ```
+![example plot](http://i.imgur.com/Gfo5rfH.png)
 
 ### Possible category - field combinations
 
