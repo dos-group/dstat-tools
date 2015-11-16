@@ -35,8 +35,9 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...
                                      default is 100.
     -n, --no-key                     No plot key is printed.
     -d, --dry                        Dry run. Plot is not saved to file but instead displayed with gnuplot.
-    -o, --output DIR                 Directory that plot should be saved to,
-                                     default is csv file directory.
+    -o, --output FILE|DIR            File or Directory that plot should be saved to.
+                                     If a directory is given the filename will be generated.
+                                     Default is csv file directory.
     -y, --y-range RANGE              Sets the y-axis range. Default is 105. If a value exceeds
                                      this range, "autoscale" is enabled.
     -c, --category CATEGORY          Select the category.
