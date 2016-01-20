@@ -33,14 +33,91 @@ def plot(dataset_container, category, field, dry, filename)
   end
 end
 
-def read_csv(category, field, files, no_plot_key, y_range, inversion)
-  if $verbose then puts "Reading from csv." end
+# Create the GnuplotDataSet that is going to be printed.
+# Params:
+# +timecode:: Array containing the timestamps
+# +values:: Array containing the actual values
+# +no_plot_key:: boolean to de-/activate plotkey
+# +file:: filename
+def create_gnuplot_dataset(timecode, values, no_plot_key, file)
+  Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
+    gp_dataset.with = "lines"
+    if no_plot_key then
+      gp_dataset.notitle
+    else
+      gp_dataset.title = File.basename file
+    end
+  end
+end
+
+# check if header is present
+def analyze_header_create_plot_title(csv, no_plot_key, y_range, inversion)
+  if csv[0].index("Dstat 0.7.2 CSV output")
+    # header present -> analyse header, drop the first rows
+    plot_title = generate_plot_title(csv)
+  end
+end
+
+# returns the values from a headerless csv file
+def read_column_from_csv(files, column, no_plot_key, y_range, inversion)
+  
+  plot_title = "Column #{column}"
 
   if inversion != 0.0
     y_range = {:enforced => true, :max => inversion + 5}
-    plot_title = "#{category}-#{field} inverted"
-  else
-    plot_title = "#{category}-#{field}"
+    plot_title += " inverted"
+  end
+
+  filename = "#{plot_title}.png".sub("/", "_")
+  
+  plot_title +=  ' over time \n'
+
+  datasets = []
+  autoscale = false
+  files.each do |file|
+    if $verbose then puts "Reading from csv to get column #{column}." end
+    csv = CSV.read(file)
+
+    # TODO: check for header and skip it
+    if csv[0].index "Dstat 0.7.2 CSV output"
+      plot_title += "(Host: #{csv[2][1]} User: #{csv[2][6]} Date: #{csv[3].last})"
+
+      # TODO: find the category and field index and assign it to
+      # column = csv
+      csv = csv.drop(7)
+    end
+
+    csv = csv.transpose
+    timecode = csv[0]
+    time_offset = timecode.first.to_f
+    timecode.map! { |timestamp| timestamp.to_f - time_offset }
+
+    values = csv[column]
+    if inversion != 0.0
+      values.map! { |value| (value.to_f - inversion).abs }
+    end
+
+    if !y_range[:enforced] # TODO: this makes no sense, fix it
+      if values.last.to_f >= y_range[:max] then autoscale = true end
+    end
+
+    dataset = create_gnuplot_dataset(timecode, values, no_plot_key, file)
+    datasets.push dataset
+  end
+
+  if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
+
+  dataset_container = {:datasets => datasets, :plot_title => plot_title, :y_range => y_range, :autoscale => autoscale, :filename => filename}
+end
+
+def read_csv(category, field, files, no_plot_key, y_range, inversion)
+  if $verbose then puts "Reading from csv." end
+
+  plot_title = "#{category}-#{field}"
+
+  if inversion != 0.0
+    y_range = {:enforced => true, :max => inversion + 5}
+    plot_title += " inverted"
   end
   
   filename = "#{plot_title}.png".sub("/", "_")
@@ -104,16 +181,7 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
 
       if epoch_index.nil? then timecode = (0..values.count - 1).to_a end
 
-      # create the GnuplotDataSet that is going to be printed
-      dataset = Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
-        gp_dataset.with = "lines"
-        if no_plot_key then
-          gp_dataset.notitle
-        else
-          gp_dataset.title = File.basename file
-        end
-      end
-
+      dataset = create_gnuplot_dataset(timecode, values, no_plot_key, file)
       datasets.push dataset
     end
   end
@@ -171,6 +239,13 @@ def read_options_and_arguments
       options[:field] = field
     end
 
+    options[:column] = nil
+    opts.on('-l', '--column COLUMN', 'Select the desired column directly.') do |column|
+      unless options[:category] && options[:field]  # -c and -f override -l
+        options[:column] = column.to_i
+      end
+    end
+
     # This displays the help screen
     opts.on_tail('-h', '--help', 'Display this screen.' ) do
       puts opts
@@ -186,9 +261,11 @@ def read_options_and_arguments
   if $verbose then puts "options: #{options.inspect}" end
 
   if options[:category].nil? || options[:category].nil?
-    puts "[Error] -c CATEGORY and -f FIELD are mandatory parameters.\n\n"
-    puts optparse
-    exit
+    if options[:column].nil?
+      puts "[Error] (-c CATEGORY and -f FIELD) or (-l COLUMN) are mandatory parameters.\n\n"
+      puts optparse
+      exit
+    end
   end
 
   # if ARGV is empty at this point no directory or file(s) is specified
@@ -219,11 +296,20 @@ def read_options_and_arguments
   options
 end
 
-options = read_options_and_arguments
-dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range], options[:inversion])
-# generate filename
-filename = options[:filename]
-if filename == nil then # if an output file is not explicitly stated
-  filename = File.join(options[:target_dir], dataset_container[:filename])
+if __FILE__ == $0
+  options = read_options_and_arguments
+
+  if options[:column]
+    dataset_container = read_column_from_csv(options[:files], options[:column],  options[:no_plot_key], options[:y_range], options[:inversion])
+  else
+    dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range], options[:inversion])
+  end
+  
+  # generate filename
+  filename = options[:filename]
+  if filename == nil then # if an output file is not explicitly stated
+    filename = File.join(options[:target_dir], dataset_container[:filename])
+  end
+  
+  plot(dataset_container, options[:category], options[:field], options[:dry], filename)
 end
-plot(dataset_container, options[:category], options[:field], options[:dry], filename)
