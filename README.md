@@ -42,6 +42,7 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...
                                      this range, "autoscale" is enabled.
     -c, --category CATEGORY          Select the category.
     -f, --field FIELD                Select the field.
+    -l, --column COLUMN              Select the desired column directly.
     -h, --help                       Display this screen.
 ```
 
@@ -56,32 +57,37 @@ ruby dstat_plot.rb -c "total cpu usage" -f "usr" example.csv
 ```
 ![example plot](http://i.imgur.com/Gfo5rfH.png)
 
+The equivalent with the -l option would be
+
+```
+ruby dstat_plot.rb -l 11 example.csv
+```
 ### Possible category - field combinations
 
 (N is the cpu core index for 0..n cores)
 
-Categoriy | Field |   | Categoriy | Field |
+Categoriy | Field | Column | Categoriy | Field | Column
 ----------|-------|---| ----------|-------|
-epoch     | epoch |   | net/total | recv
-memory usage | used | |           | send
-          | buff  |   | net/eth0  | recv
-          | cach  |   |           | send
-          | free  |   | dsk/total | read
-swap      | used  |   |           | writ
-          |free   |   | dsk/sda   | read
-system    | int   |   |           | writ
-          |csv    |   | io/total  | read
-paging    | in    |   |           | writ
-          |out    |   | io/sda    | read
-total cpu usage   | usr | |       | writ
-          | sys
-          | idl
-          | wai
-          | hiq
-          | siq
-cpuN usage | usr
-          | sys
-          | idl
-          | wai
-          | hiq
-          | siq
+epoch     | epoch |  0 | net/total | recv | 23
+memory usage | used | 1 |           | send | 24
+          | buff  |  2 | net/eth0  | recv | 25
+          | cach  |  3 |           | send | 26
+          | free  |  4 | dsk/total | read | 27
+swap      | used  |  5 |           | writ | 28
+          |free   |  6 | dsk/sda   | read | 29
+system    | int   |  7 |           | writ | 30
+          |csv    |  8 | io/total  | read | 31
+paging    | in    |  9 |           | writ | 32
+          |out    |  10 | io/sda    | read | 33
+total cpu usage   | usr | 11 |       | writ | 34
+          | sys | 12
+          | idl | 13
+          | wai | 14
+          | hiq | 15
+          | siq | 16
+cpuN usage | usr | 17
+          | sys | 18
+          | idl | 19
+          | wai | 20
+          | hiq | 21
+          | siq | 22

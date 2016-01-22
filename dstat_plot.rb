@@ -79,11 +79,8 @@ def read_column_from_csv(files, column, no_plot_key, y_range, inversion)
     csv = CSV.read(file)
 
     # TODO: check for header and skip it
-    if csv[0].index "Dstat 0.7.2 CSV output"
+    if csv[2].index "Host:"
       plot_title += "(Host: #{csv[2][1]} User: #{csv[2][6]} Date: #{csv[3].last})"
-
-      # TODO: find the category and field index and assign it to
-      # column = csv
       csv = csv.drop(7)
     end
 
