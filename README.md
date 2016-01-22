@@ -66,28 +66,28 @@ ruby dstat_plot.rb -l 11 example.csv
 
 (N is the cpu core index for 0..n cores)
 
-Categoriy | Field | Column | Categoriy | Field | Column
-----------|-------|---| ----------|-------|
-epoch     | epoch |  0 | net/total | recv | 23
-memory usage | used | 1 |           | send | 24
-          | buff  |  2 | net/eth0  | recv | 25
-          | cach  |  3 |           | send | 26
-          | free  |  4 | dsk/total | read | 27
-swap      | used  |  5 |           | writ | 28
-          |free   |  6 | dsk/sda   | read | 29
-system    | int   |  7 |           | writ | 30
-          |csv    |  8 | io/total  | read | 31
-paging    | in    |  9 |           | writ | 32
-          |out    |  10 | io/sda    | read | 33
-total cpu usage   | usr | 11 |       | writ | 34
-          | sys | 12
-          | idl | 13
-          | wai | 14
-          | hiq | 15
-          | siq | 16
-cpuN usage | usr | 17
-          | sys | 18
-          | idl | 19
-          | wai | 20
-          | hiq | 21
-          | siq | 22
+Categoriy | Field | Column | Categoriy | Field | Column |
+----------|-------|--------|-----------|-------|--------|
+epoch     | epoch |  0 | net/total | recv | 23 |
+memory usage | used | 1 |           | send | 24 |
+          | buff  |  2 | net/eth0  | recv | 25 |
+          | cach  |  3 |           | send | 26 |
+          | free  |  4 | dsk/total | read | 27 |
+swap      | used  |  5 |           | writ | 28 |
+          |free   |  6 | dsk/sda   | read | 29 |
+system    | int   |  7 |           | writ | 30 |
+          |csv    |  8 | io/total  | read | 31 |
+paging    | in    |  9 |           | writ | 32 |
+          |out    |  10 | io/sda    | read | 33 |
+total cpu usage   | usr | 11 |       | writ | 34 |
+          | sys | 12 |
+          | idl | 13 |
+          | wai | 14 |
+          | hiq | 15 |
+          | siq | 16 |
+cpuN usage | usr | 17 |
+          | sys | 18 |
+          | idl | 19 |
+          | wai | 20 |
+          | hiq | 21 |
+          | siq | 22 |
