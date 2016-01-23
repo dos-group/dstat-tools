@@ -51,7 +51,8 @@ def create_gnuplot_dataset(timecode, values, no_plot_key, file)
 end
 
 # check if header is present
-def analyze_header_create_plot_title(csv, no_plot_key, y_range, inversion)
+def analyze_header_create_plot_title(prefix, no_plot_key, y_range, inversion, csv_header)
+  plot_title = prefix
   if csv[0].index("Dstat 0.7.2 CSV output")
     # header present -> analyse header, drop the first rows
     plot_title = generate_plot_title(csv)
@@ -61,7 +62,7 @@ end
 # returns the values from a headerless csv file
 def read_column_from_csv(files, column, no_plot_key, y_range, inversion)
   
-  plot_title = "Column #{column}"
+  prefix = "Column #{column}"
 
   if inversion != 0.0
     y_range = {:enforced => true, :max => inversion + 5}
@@ -190,62 +191,62 @@ end
 
 
 def read_options_and_arguments
-  options = {} # Hash that hold all the options
+  opts = {} # Hash that hold all the options
 
-  optparse = OptionParser.new do |opts|
+  optparse = OptionParser.new do |parser|
     # banner that is displayed at the top
-    opts.banner = "Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...]"
+    parser.banner = "Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...]"
 
     ### options and what they do
-    opts.on('-v', '--verbose', 'Output more information') do
+    parser.on('-v', '--verbose', 'Output more information') do
       $verbose = true
     end
 
-    options[:inversion] = 0.0
-    opts.on('-i', '--invert [VALUE]', Float, 'Invert the graph such that inverted(x) = VALUE - f(x),', 'default is 100.') do |value|
-      options[:inversion] = value.nil? ? 100.0 : value
+    opts[:inversion] = 0.0
+    parser.on('-i', '--invert [VALUE]', Float, 'Invert the graph such that inverted(x) = VALUE - f(x),', 'default is 100.') do |value|
+      opts[:inversion] = value.nil? ? 100.0 : value
     end
 
-    options[:no_plot_key] = false
-    opts.on('-n','--no-key', 'No plot key is printed.') do
-      options[:no_plot_key] = true
+    opts[:no_plot_key] = false
+    parser.on('-n','--no-key', 'No plot key is printed.') do
+      opts[:no_plot_key] = true
     end
 
-    options[:dry] = false
-    opts.on('-d', '--dry', 'Dry run. Plot is not saved to file but instead displayed with gnuplot.') do
-      options[:dry] = true
+    opts[:dry] = false
+    parser.on('-d', '--dry', 'Dry run. Plot is not saved to file but instead displayed with gnuplot.') do
+      opts[:dry] = true
     end
 
-    options[:output] = nil
-    opts.on('-o','--output FILE|DIR', 'File or Directory that plot should be saved to.', 'If a directory is given the filename will be generated.', 'Default is csv file directory.') do |path|
-      options[:output] = path
+    opts[:output] = nil
+    parser.on('-o','--output FILE|DIR', 'File or Directory that plot should be saved to.', 'If a directory is given the filename will be generated.', 'Default is csv file directory.') do |path|
+      opts[:output] = path
     end
 
-    options[:y_range] = {:max => 105.0, :enforced => false}
-    opts.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
-      options[:y_range] = {:max => range, :enforced => true}
+    opts[:y_range] = {:max => 105.0, :enforced => false}
+    parser.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
+      opts[:y_range] = {:max => range, :enforced => true}
     end
 
-    options[:category] = nil
-    opts.on('-c', '--category CATEGORY', 'Select the category.') do |category|
-      options[:category] = category
+    opts[:category] = nil
+    parser.on('-c', '--category CATEGORY', 'Select the category.') do |category|
+      opts[:category] = category
     end
 
-    options[:field] = nil
-    opts.on('-f', '--field FIELD' , 'Select the field.') do |field|
-      options[:field] = field
+    opts[:field] = nil
+    parser.on('-f', '--field FIELD' , 'Select the field.') do |field|
+      opts[:field] = field
     end
 
-    options[:column] = nil
-    opts.on('-l', '--column COLUMN', 'Select the desired column directly.') do |column|
-      unless options[:category] && options[:field]  # -c and -f override -l
-        options[:column] = column.to_i
+    opts[:column] = nil
+    parser.on('-l', '--column COLUMN', 'Select the desired column directly.') do |column|
+      unless opts[:category] && opts[:field]  # -c and -f override -l
+        opts[:column] = column.to_i
       end
     end
 
     # This displays the help screen
-    opts.on_tail('-h', '--help', 'Display this screen.' ) do
-      puts opts
+    parser.on_tail('-h', '--help', 'Display this screen.' ) do
+      puts parser
       exit
     end
   end
@@ -255,10 +256,10 @@ def read_options_and_arguments
   # and removes all options and parameters found. What's
   # left is the list of files
   optparse.parse!
-  if $verbose then puts "options: #{options.inspect}" end
+  if $verbose then puts "opts: #{opts.inspect}" end
 
-  if options[:category].nil? || options[:category].nil?
-    if options[:column].nil?
+  if opts[:category].nil? || opts[:category].nil?
+    if opts[:column].nil?
       puts "[Error] (-c CATEGORY and -f FIELD) or (-l COLUMN) are mandatory parameters.\n\n"
       puts optparse
       exit
@@ -271,44 +272,44 @@ def read_options_and_arguments
 
   files = []
   if File.directory?(ARGV.last) then
-    options[:target_dir] = ARGV.last.chomp("/") # cuts of "/" from the end if present
-    files = Dir.glob "#{options[:target_dir]}/*.csv"
+    opts[:target_dir] = ARGV.last.chomp("/") # cuts of "/" from the end if present
+    files = Dir.glob "#{opts[:target_dir]}/*.csv"
   else
-    options[:target_dir] = File.dirname ARGV.first
+    opts[:target_dir] = File.dirname ARGV.first
     ARGV.each do |filename|
       files.push filename
     end
   end
   puts "Plotting data from #{files.count} file(s)."
-  options[:files] = files
+  opts[:files] = files
   if $verbose then puts "files: #{files.count} #{files.inspect}" end
 
 
   # check if a filename given
-  options[:filename] = nil
-  if options[:output] != nil
-    options[:filename] = options[:output]
+  opts[:filename] = nil
+  if opts[:output] != nil and !File.directory?(opts[:output])
+    opts[:filename] = opts[:output]
   end
 
-  options
+  opts
 end
 
 if __FILE__ == $0
-  options = read_options_and_arguments
+  opts = read_options_and_arguments
 
-  if options[:column]
-    dataset_container = read_column_from_csv(options[:files], options[:column],  options[:no_plot_key], options[:y_range], options[:inversion])
+  if opts[:column]
+    dataset_container = read_column_from_csv(opts[:files], opts[:column],  opts[:no_plot_key], opts[:y_range], opts[:inversion])
   else
-    dataset_container = read_csv(options[:category], options[:field], options[:files], options[:no_plot_key], options[:y_range], options[:inversion])
+    dataset_container = read_csv(opts[:category], opts[:field], opts[:files], opts[:no_plot_key], opts[:y_range], opts[:inversion])
   end
   
   # generate filename
-  filename = options[:filename]
+  filename = opts[:filename]
   if filename == nil then # if an output file is not explicitly stated
     filename = File.join(options[:target_dir], dataset_container[:filename])
   elsif File.directory?(filename)
     filename = File.join(filename, dataset_container[:filename])
   end
   
-  plot(dataset_container, options[:category], options[:field], options[:dry], filename)
+  plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
 end
