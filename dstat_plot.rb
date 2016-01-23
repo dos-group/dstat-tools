@@ -38,7 +38,7 @@ end
 # +timecode:: Array containing the timestamps
 # +values:: Array containing the actual values
 # +no_plot_key:: boolean to de-/activate plotkey
-# +file:: filename
+# +file:: file
 def create_gnuplot_dataset(timecode, values, no_plot_key, file)
   Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
     gp_dataset.with = "lines"
@@ -50,45 +50,39 @@ def create_gnuplot_dataset(timecode, values, no_plot_key, file)
   end
 end
 
-# check if header is present
-def analyze_header_create_plot_title(prefix, no_plot_key, y_range, inversion, csv_header)
-  plot_title = prefix
-  if csv[0].index("Dstat 0.7.2 CSV output")
-    # header present -> analyse header, drop the first rows
-    plot_title = generate_plot_title(csv)
+def analyze_header_create_plot_title(prefix, inversion, csv_header)
+  plot_title = "#{prefix} over time"
+  if csv_header[2].index("Host:")
+    plot_title += '\n' + "(Host: #{csv_header[2][1]} User: #{csv_header[2][6]} Date: #{csv_header[3].last})"
   end
+  if inversion then plot_title += '\n(inverted)' end
+  plot_title
 end
 
 # returns the values from a headerless csv file
 def read_column_from_csv(files, column, no_plot_key, y_range, inversion)
-  
-  prefix = "Column #{column}"
-
-  if inversion != 0.0
+  if inversion != 0.0 # this needs to be fixed
     y_range = {:enforced => true, :max => inversion + 5}
-    plot_title += " inverted"
   end
 
-  filename = "#{plot_title}.png".sub("/", "_")
-  
-  plot_title +=  ' over time \n'
-
+  plot_title = nil
   datasets = []
   autoscale = false
+
   files.each do |file|
     if $verbose then puts "Reading from csv to get column #{column}." end
     csv = CSV.read(file)
 
-    # TODO: check for header and skip it
+    if plot_title.nil?
+      plot_title = analyze_header_create_plot_title("dstat-column #{column}", inversion != 0.0, csv[0..6])
+    end
+
     if csv[2].index "Host:"
-      plot_title += "(Host: #{csv[2][1]} User: #{csv[2][6]} Date: #{csv[3].last})"
       csv = csv.drop(7)
     end
 
     csv = csv.transpose
-    timecode = csv[0]
-    time_offset = timecode.first.to_f
-    timecode.map! { |timestamp| timestamp.to_f - time_offset }
+    timecode = csv[0].map { |timestamp| timestamp.to_f - csv[0].first.to_f }
 
     values = csv[column]
     if inversion != 0.0
@@ -105,7 +99,7 @@ def read_column_from_csv(files, column, no_plot_key, y_range, inversion)
 
   if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
 
-  dataset_container = {:datasets => datasets, :plot_title => plot_title, :y_range => y_range, :autoscale => autoscale, :filename => filename}
+  dataset_container = { :datasets => datasets, :plot_title => plot_title, :y_range => y_range, :autoscale => autoscale }
 end
 
 def read_csv(category, field, files, no_plot_key, y_range, inversion)
@@ -305,11 +299,22 @@ if __FILE__ == $0
   
   # generate filename
   filename = opts[:filename]
-  if filename == nil then # if an output file is not explicitly stated
-    filename = File.join(options[:target_dir], dataset_container[:filename])
-  elsif File.directory?(filename)
-    filename = File.join(filename, dataset_container[:filename])
+  if filename.nil? || File.directory?(filename) # if an output file is not explicitly stated
+    
+    if opts[:column] # generate filename
+      generated_filename = "dstat-column#{opts[:column]}.png"
+    else
+      generated_filename = "#{opts[:category]}-#{opts[:field]}.png".sub("/", "_")
+    end
+    
+    if File.directory?(filename) # add directory portion
+      filename = File.join(filename, generated_filename)
+    else
+      filename = File.join(opts[:target_dir], generated_filename)
+    end
   end
   
   plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
 end
+
+def construct_filename
