@@ -29,7 +29,9 @@ For linux the procedure is
 ### Usage
 
 ```
-Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...]
+Usage:
+dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...] or
+dstat_plot.rb [options] -l COLUMN [directory | file1 file2 ...]
     -v, --verbose                    Output more information
     -i, --invert [VALUE]             Invert the graph such that inverted(x) = VALUE - f(x),
                                      default is 100.
@@ -46,7 +48,7 @@ Usage: dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...
     -h, --help                       Display this screen.
 ```
 
-(-c CATEGORY and -f FIELD are mandatory parameters)
+(-c CATEGORY -f FIELD or -l COLUMN are mandatory parameters)
 
 The plot is saved as category-field.png in the folder where the csv files are located unless -o PATH explicitly specifies a different destination.
 
