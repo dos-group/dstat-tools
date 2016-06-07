@@ -286,7 +286,7 @@ def read_options_and_arguments
 
   # check if a filename given
   options[:filename] = nil
-  if options[:output] != nil and !File.directory?(options[:output])
+  if options[:output] != nil
     options[:filename] = options[:output]
   end
 
@@ -306,6 +306,8 @@ if __FILE__ == $0
   filename = options[:filename]
   if filename == nil then # if an output file is not explicitly stated
     filename = File.join(options[:target_dir], dataset_container[:filename])
+  elsif File.directory?(filename)
+    filename = File.join(filename, dataset_container[:filename])
   end
   
   plot(dataset_container, options[:category], options[:field], options[:dry], filename)
