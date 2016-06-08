@@ -23,7 +23,8 @@ def plot(dataset_container, category, field, dry, filename)
       plot.key "out vert right top"
 
       unless dry
-        plot.terminal 'png size 1600,800 enhanced font "Helvetica,11"'
+        format = filename.split('.')[-1]
+        plot.terminal format + ' size 1600,800 enhanced font "Helvetica,11"'
         plot.output filename
         puts "Saving plot to '#{filename}'"
       end
