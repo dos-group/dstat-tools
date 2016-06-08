@@ -14,7 +14,7 @@ $verbose = false
 def plot(dataset_container, category, field, dry, filename)
   Gnuplot.open do |gp|
     Gnuplot::Plot.new(gp) do |plot|
-      plot.title dataset_container[:plot_title]
+      plot.title dataset_container[:plot_title].gsub('_', '\\\\\\\\_')
       plot.xlabel "Time in seconds"
       plot.ylabel "#{category}: #{field}"
       range_max = dataset_container[:y_range][:max]
@@ -45,7 +45,7 @@ def create_gnuplot_dataset(timecode, values, no_plot_key, file)
     if no_plot_key then
       gp_dataset.notitle
     else
-      gp_dataset.title = File.basename file
+      gp_dataset.title = (File.basename file).gsub('_', '\\_')
     end
   end
 end
