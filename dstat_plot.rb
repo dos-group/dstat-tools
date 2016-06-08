@@ -95,9 +95,7 @@ def read_column_from_csv(files, column, no_plot_key, y_range, inversion)
       values.map! { |value| (value.to_f - inversion).abs }
     end
 
-    if !y_range[:enforced] # TODO: this makes no sense, fix it
-      if values.last.to_f >= y_range[:max] then autoscale = true end
-    end
+    if values.last.to_f >= y_range[:max] then autoscale = true end
 
     dataset = create_gnuplot_dataset(timecode, values, no_plot_key, file)
     datasets.push dataset
@@ -171,9 +169,7 @@ def read_csv(category, field, files, no_plot_key, y_range, inversion)
       until csv_file.eof do
         unless epoch_index.nil? then timecode.push(current_row.at(epoch_index).to_f - time_offset) end
         values.push (current_row.at(field_index).to_f - inversion).abs
-        if !y_range[:enforced]
-          if values.last.to_f >= y_range[:max] then autoscale = true end
-        end
+        if values.last.to_f >= y_range[:max] then autoscale = true end
         current_row = csv_file.shift
       end
 
