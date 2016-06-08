@@ -19,8 +19,7 @@ def plot(dataset_container, category, field, dry, filename)
       plot.title dataset_container[:plot_title]
       plot.xlabel "Time in seconds"
       plot.ylabel "#{category}: #{field}"
-      range_max = dataset_container[:y_max]
-      plot.yrange "[0:#{range_max}]"
+      plot.yrange "[0:#{dataset_container[:y_max]}]"
       if dataset_container[:autoscale] then plot.set "autoscale" end
       plot.key "out vert right top"
       
@@ -61,18 +60,45 @@ def analyze_header_create_plot_title(prefix, inversion, csv_header)
   plot_title
 end
 
+def translate_to_column(category, field, csv)
+  category_index = csv[5].index category
+  if category_index.nil?
+    puts "'#{category}' is not a valid parameter for 'category'."
+    puts "Allowed categories: #{csv[5].reject{ |elem| elem == nil }.inspect}"
+    exit 0
+  end
+
+  field_index = csv[6].drop(category_index).index field
+  if field_index.nil?
+    puts "'#{field}' is not a valid parameter for 'field'."
+    puts "Allowed fields: #{csv[6].reject{ |elem| elem == nil }.inspect}"
+    exit 0
+  end
+  
+  if $verbose then puts "'#{category}-#{field}' was translated to #{category_index + field_index}." end
+  column = category_index + field_index
+end
+
 # returns the values from a headerless csv file
-def read_column_from_csv(files, column, no_plot_key, y_max, inversion)
+def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inversion)
   plot_title = nil
   datasets = []
   autoscale = false
 
   files.each do |file|
-    if $verbose then puts "Reading from csv to get column #{column}." end
     csv = CSV.read(file)
 
-    if plot_title.nil?
-      plot_title = analyze_header_create_plot_title("dstat-column #{column}", inversion != 0.0, csv[0..6])
+    if column
+      if $verbose then puts "Reading from csv to get column #{column}." end
+      prefix = "dstat-column #{column}"
+    else
+      if $verbose then puts "Reading from csv to get #{category}-#{field}." end
+      column = translate_to_column(category, field, csv)
+      prefix = "#{category}-#{field}"
+    end
+    
+    if plot_title.nil? # this only needs to be done for the first file
+      plot_title = analyze_header_create_plot_title(prefix, inversion != 0.0, csv[0..6])
     end
 
     if csv[2].index "Host:"
@@ -84,8 +110,8 @@ def read_column_from_csv(files, column, no_plot_key, y_max, inversion)
 
     values = csv[column]
     if inversion != 0.0
-        values.map! { |value| (value.to_f - inversion).abs }
-        y_max = inversion + 5.0
+      values.map! { |value| (value.to_f - inversion).abs }
+      y_max = inversion + 5.0
     end
     
     if y_max == Y_DEFAULT
@@ -97,95 +123,13 @@ def read_column_from_csv(files, column, no_plot_key, y_max, inversion)
     datasets.push dataset
   end
 
-  if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
+  if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_max: #{y_max} \nautoscale: #{autoscale}" end
 
-  dataset_container = { :datasets => datasets, :plot_title => plot_title, :y_range => {:max => y_max}, :autoscale => autoscale }
+  dataset_container = { :datasets => datasets, :plot_title => plot_title, :y_max => y_max, :autoscale => autoscale }
 end
-
-def read_csv(category, field, files, no_plot_key, y_range, inversion)
-  if $verbose then puts "Reading from csv." end
-
-  plot_title = "#{category}-#{field}"
-
-  if inversion != 0.0
-    y_range = {:enforced => true, :max => inversion + 5}
-    plot_title += " inverted"
-  end
-  
-  filename = "#{plot_title}.png".sub("/", "_")
-
-  plot_title +=  ' over time \n'
-  plot_title_not_complete = true
-
-  datasets = []
-  autoscale = false
-
-  files.each do |file|
-    CSV.open(file) do |csv_file|
-      current_row = csv_file.shift
-      # loop until row with "epoch" in it is reached and read some meta data 
-      # but only for the first file since there can only be one title
-      while current_row.index("epoch").nil? do
-        if plot_title_not_complete
-          if current_row.index("Host:") != nil
-            plot_title += "(Host: #{current_row[1]} User: #{current_row[6]}"
-          elsif current_row.index("Cmdline:") != nil
-            plot_title += " Date: #{current_row.last})"
-            plot_title_not_complete = false
-          end
-        end
-        current_row = csv_file.shift
-      end
-
-      # find the epoch category == nil if not found
-      epoch_index = current_row.index("epoch")
-
-      category_index = current_row.index(category)
-    	if category_index.nil?
-    		puts "#{category} is not a valid parameter for 'category'. Value could not be found."
-        puts "Allowed categories: #{current_row.reject{ |elem| elem == nil }.inspect}"
-    		exit 1
-    	end
-    	
-    	current_row_at_category = csv_file.shift.drop(category_index)
-      field_offset = current_row_at_category.index(field)
-    	if field_offset.nil?
-    		puts "#{field} is not a valid parameter for 'field'. Value could not be found."
-        puts "Allowed fields: #{current_row_at_category.inspect}"
-    		exit 1
-      else
-        field_index = category_index + field_offset
-    	end
-
-      # get all the interesting values and put them in an array
-    	current_row = csv_file.shift
-      unless epoch_index.nil? then time_offset = current_row.at(epoch_index).to_f end
-      timecode = []
-      values = []
-      until csv_file.eof do
-        unless epoch_index.nil? then timecode.push(current_row.at(epoch_index).to_f - time_offset) end
-        values.push (current_row.at(field_index).to_f - inversion).abs
-        if !y_range[:enforced]
-          if values.last.to_f >= y_range[:max] then autoscale = true end
-        end
-        current_row = csv_file.shift
-      end
-
-      if epoch_index.nil? then timecode = (0..values.count - 1).to_a end
-
-      dataset = create_gnuplot_dataset(timecode, values, no_plot_key, file)
-      datasets.push dataset
-    end
-  end
-
-  if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_range: #{y_range} \nautoscale: #{autoscale}" end
-
-  dataset_container = {:datasets => datasets, :plot_title => plot_title, :y_range => y_range, :autoscale => autoscale, :filename => filename}
-end
-
 
 def read_options_and_arguments
-  opts = {} # Hash that hold all the options
+  opts = {} # Hash that holds all the options
 
   optparse = OptionParser.new do |parser|
     # banner that is displayed at the top
@@ -218,10 +162,8 @@ def read_options_and_arguments
       opts[:output] = path
     end
 
-    opts[:y_range] = {:max => 105.0, :enforced => false} # TODO:remove enforced, it won't be used in future verions
     opts[:y_max] = Y_DEFAULT
     parser.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
-      opts[:y_range] = {:max => range, :enforced => true} # TODO:remove enforced, it won't be used in future verions
       opts[:y_max] = range
     end
 
@@ -282,6 +224,7 @@ def read_options_and_arguments
   opts[:files] = files
   if $verbose then puts "files: #{files.count} #{files.inspect}" end
 
+# opts = { :inversion, :no_plot_key, :dry, :output, :y_max, :category, :field, :column, :target_dir, :files }
   opts
 end
 
@@ -307,14 +250,7 @@ end
 
 if __FILE__ == $0
   opts = read_options_and_arguments
-
-  if opts[:column]
-    dataset_container = read_column_from_csv(opts[:files], opts[:column], opts[:no_plot_key], opts[:y_max], opts[:inversion])
-  else
-    dataset_container = read_csv(opts[:category], opts[:field], opts[:files], opts[:no_plot_key], opts[:y_range], opts[:inversion])
-  end
-
+  dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column], opts[:no_plot_key], opts[:y_max], opts[:inversion])
   filename = generate_filename(opts[:output], opts[:column], opts[:category], opts[:field], opts[:target_dir])
-  
   plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
 end
