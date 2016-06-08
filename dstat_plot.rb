@@ -222,6 +222,11 @@ def read_options_and_arguments
       options[:output] = path
     end
 
+    options[:title] = nil
+    opts.on('-t','--title TITLE', 'Override the default title of the plot.') do |title|
+      options[:title] = title
+    end
+
     options[:y_range] = {:max => 105.0, :enforced => false}
     opts.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
       options[:y_range] = {:max => range, :enforced => true}
@@ -308,8 +313,10 @@ if __FILE__ == $0
   filename = options[:filename]
   if filename == nil then # if an output file is not explicitly stated
     filename = File.join(options[:target_dir], dataset_container[:filename])
-  elsif File.directory?(filename)
-    filename = File.join(filename, dataset_container[:filename])
+  end
+
+  if options[:title] != nil then
+    dataset_container[:plot_title] = options[:title]
   end
 
   plot(dataset_container, options[:category], options[:field], options[:dry], filename)
