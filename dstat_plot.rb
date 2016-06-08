@@ -282,14 +282,27 @@ def read_options_and_arguments
   opts[:files] = files
   if $verbose then puts "files: #{files.count} #{files.inspect}" end
 
-
-  # check if a filename given
-  opts[:filename] = nil
-  if opts[:output] != nil and !File.directory?(opts[:output])
-    opts[:filename] = opts[:output]
-  end
-
   opts
+end
+
+def generate_filename(output, column, category, field, target_dir)
+  if output.nil? || File.directory?(output) # if an output file is not explicitly stated or if it's a directory
+    # generate filename
+    if column
+      generated_filename = "dstat-column#{column}.png"
+    else
+      generated_filename = "#{category}-#{field}.png".sub("/", "_")
+    end
+    
+    # add directory portion
+    if output.nil?
+      filename = File.join(target_dir, generated_filename)
+    elsif File.directory?(output)
+      filename = File.join(output, generated_filename)
+    end
+  else # specific path+file is given so just use that
+    filename = output
+  end
 end
 
 if __FILE__ == $0
@@ -300,23 +313,8 @@ if __FILE__ == $0
   else
     dataset_container = read_csv(opts[:category], opts[:field], opts[:files], opts[:no_plot_key], opts[:y_range], opts[:inversion])
   end
-  
-  # generate filename
-  filename = opts[:filename]
-  if filename.nil? || File.directory?(filename) # if an output file is not explicitly stated
-    
-    if opts[:column] # generate filename
-      generated_filename = "dstat-column#{opts[:column]}.png"
-    else
-      generated_filename = "#{opts[:category]}-#{opts[:field]}.png".sub("/", "_")
-    end
-    
-    if filename.nil? # add directory portion
-      filename = File.join(opts[:target_dir], generated_filename)
-    elsif File.directory?(filename)
-      filename = File.join(filename, generated_filename)
-    end
-  end
+
+  filename = generate_filename(opts[:output], opts[:column], opts[:category], opts[:field], opts[:target_dir])
   
   plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
 end
