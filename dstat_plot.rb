@@ -3,7 +3,6 @@
 require 'gnuplot'
 require 'csv'
 require 'optparse'
-require 'pry'
 
 """
 dstat_plot
@@ -105,7 +104,14 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
       csv = csv.drop(7)
     end
 
-    csv = csv.transpose
+    begin
+      csv = csv.transpose
+    rescue IndexError => e
+      puts 'ERROR: It appears that your csv file is malformed. Check for incomplete lines, empty lines etc.'
+      puts e.backtrace[0]  + e.message
+      exit
+    end
+
     timecode = csv[0].map { |timestamp| timestamp.to_f - csv[0].first.to_f }
 
     values = csv[column]
