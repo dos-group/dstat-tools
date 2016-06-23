@@ -18,7 +18,7 @@ def plot(dataset_container, category, field, dry, filename)
       plot.title dataset_container[:plot_title].gsub('_', '\\\\\\\\_')
       plot.xlabel "Time in seconds"
       plot.ylabel "#{category}: #{field}"
-      plot.yrange "[0:#{dataset_container[:y_max]}]"
+      plot.yrange "[0:#{dataset_container[:y_max] * 1.05}]"
       if dataset_container[:autoscale] then plot.set "autoscale" end
       plot.key "out vert right top"
 
@@ -84,6 +84,7 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
   plot_title = nil
   datasets = []
   autoscale = false
+  overall_max = y_max.nil? ? Y_DEFAULT : y_max
 
   files.each do |file|
     csv = CSV.read(file)
@@ -122,12 +123,12 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
     values = csv[column]
     if inversion != 0.0
       values.map! { |value| (value.to_f - inversion).abs }
-      y_max = inversion + 5.0
+      overall_max = inversion
     end
     
-    if y_max == Y_DEFAULT
-        max_value = values.max { |a, b| a.to_f <=> b.to_f }
-        if max_value.to_f > y_max then y_max = max_value end    
+    if y_max.nil?
+      local_maximum = values.max { |a, b| a.to_f <=> b.to_f }.to_f
+      if local_maximum > overall_max then overall_max = local_maximum end
     end
 
     dataset = create_gnuplot_dataset(timecode, values, no_plot_key, file)
@@ -135,8 +136,7 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
   end
 
   if $verbose then puts "datasets: #{datasets.count} \nplot_title: #{plot_title} \ny_max: #{y_max} \nautoscale: #{autoscale}" end
-
-  dataset_container = { :datasets => datasets, :plot_title => plot_title, :y_max => y_max, :autoscale => autoscale }
+  dataset_container = { :datasets => datasets, :plot_title => plot_title, :y_max => overall_max, :autoscale => autoscale }
 end
 
 def read_options_and_arguments
@@ -173,7 +173,7 @@ def read_options_and_arguments
       opts[:output] = path
     end
 
-    opts[:y_max] = Y_DEFAULT
+    opts[:y_max]
     parser.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
       opts[:y_max] = range      
     end
