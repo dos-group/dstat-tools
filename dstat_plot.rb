@@ -40,7 +40,7 @@ end
 # +values:: Array containing the actual values
 # +no_plot_key:: boolean to de-/activate plotkey
 # +file:: file
-def create_gnuplot_dataset(timecode, values, no_plot_key, file)
+def create_gnuplot_dataset(timecode, values, no_plot_key, smooth, file)
   Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
     gp_dataset.with = "lines"
     if no_plot_key then
@@ -48,11 +48,13 @@ def create_gnuplot_dataset(timecode, values, no_plot_key, file)
     else
       gp_dataset.title = (File.basename file).gsub('_', '\\_')
     end
+    gp_dataset.smooth = smooth unless smooth.nil?
   end
 end
 
-def analyze_header_create_plot_title(prefix, inversion, csv_header)
+def analyze_header_create_plot_title(prefix, smooth, inversion, csv_header)
   plot_title = "#{prefix} over time"
+  if smooth then plot_title += " (smoothing: #{smooth})" end
   if csv_header[2].index("Host:")
     plot_title += '\n' + "(Host: #{csv_header[2][1]} User: #{csv_header[2][6]} Date: #{csv_header[3].last})"
   end
@@ -80,7 +82,7 @@ def translate_to_column(category, field, csv)
 end
 
 # returns the values from a headerless csv file
-def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inversion, title)
+def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inversion, title, smooth)
   plot_title = nil
   datasets = []
   autoscale = false
@@ -102,7 +104,7 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
       if title
         plot_title = title
       else
-        plot_title = analyze_header_create_plot_title(prefix, inversion != 0.0, csv[0..6])
+        plot_title = analyze_header_create_plot_title(prefix, smooth, inversion != 0.0, csv[0..6])
       end
     end
 
@@ -131,7 +133,7 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
       if local_maximum > overall_max then overall_max = local_maximum end
     end
 
-    dataset = create_gnuplot_dataset(timecode, values, no_plot_key, file)
+    dataset = create_gnuplot_dataset(timecode, values, no_plot_key, smooth, file)
     datasets.push dataset
   end
 
@@ -144,9 +146,9 @@ def read_options_and_arguments
 
   optparse = OptionParser.new do |parser|
     # banner that is displayed at the top
-    parser.banner = "Usage: \n
-    dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...] or \n 
-    dstat_plot.rb [options] -l COLUMN [directory | file1 file2 ...]"
+    parser.banner = "Usage: \b
+    dstat_plot.rb [options] -c CATEGORY -f FIELD [directory | file1 file2 ...] or \b 
+    dstat_plot.rb [options] -l COLUMN [directory | file1 file2 ...]\n\n"
 
     ### options and what they do
     parser.on('-v', '--verbose', 'Output more information') do
@@ -159,7 +161,7 @@ def read_options_and_arguments
     end
 
     opts[:no_plot_key] = false
-    parser.on('-n','--no-key', 'No plot key is printed.') do
+    parser.on('-n', '--no-key', 'No plot key is printed.') do
       opts[:no_plot_key] = true
     end
 
@@ -169,18 +171,32 @@ def read_options_and_arguments
     end
 
     opts[:output] = nil
-    parser.on('-o','--output FILE|DIR', 'File or Directory that plot should be saved to.', 'If a directory is given the filename will be generated.', 'Default is csv file directory.') do |path|
+    parser.on('-o','--output FILE|DIR', 'File or Directory that plot should be saved to. ' \
+      'If a directory is given', 'the filename will be generated. Default is csv file directory.') do |path|
       opts[:output] = path
     end
 
     opts[:y_max]
-    parser.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. If a value exceeds', 'this range, "autoscale" is enabled.') do |range|
+    parser.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. ' \
+      'If a value exceeds this range,', '"autoscale" is enabled.') do |range|
       opts[:y_max] = range      
     end
 
     opts[:title] = nil
-    parser.on('-t','--title TITLE', 'Override the default title of the plot.') do |title|
+    parser.on('-t', '--title TITLE', 'Override the default title of the plot.') do |title|
       opts[:title] = title
+    end
+
+    opts[:smooth] = nil
+    parser.on('-s', '--smoothing ALGORITHM', 'Smoothes the graph using the given algorithm.',"\n") do |algorithm|
+        algorithms = [ 'unique', 'frequency', 'cumulative', 'cnormal', 'kdensity', 'unwrap',
+          'csplines', 'acsplines', 'mcsplines', 'bezier', 'sbezier' ]
+        if algorithms.index(algorithm)
+          opts[:smooth] = algorithm
+        else
+          puts "#{algorithm} is not a valid option as an algorithm."
+          exit
+        end
     end
 
     opts[:category] = nil
@@ -194,7 +210,7 @@ def read_options_and_arguments
     end
 
     opts[:column] = nil
-    parser.on('-l', '--column COLUMN', 'Select the desired column directly.') do |column|
+    parser.on('-l', '--column COLUMN', 'Select the desired column directly.', "\n") do |column|
       unless opts[:category] && opts[:field]  # -c and -f override -l
         opts[:column] = column.to_i
       end
@@ -267,7 +283,7 @@ end
 
 if __FILE__ == $0
   opts = read_options_and_arguments
-  dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column], opts[:no_plot_key], opts[:y_max], opts[:inversion], opts[:title])
+  dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column], opts[:no_plot_key], opts[:y_max], opts[:inversion], opts[:title], opts[:smooth])
   filename = generate_filename(opts[:output], opts[:column], opts[:category], opts[:field], opts[:target_dir])
   plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
 end
