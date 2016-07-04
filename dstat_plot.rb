@@ -34,11 +34,61 @@ def plot(dataset_container, category, field, dry, filename)
   end
 end
 
+def generate_filename(output, column, category, field, target_dir)
+  if output.nil? || File.directory?(output) # if an output file is not explicitly stated or if it's a directory
+    # generate filename
+    if column
+      generated_filename = "dstat-column#{column}.png"
+    else
+      generated_filename = "#{category}-#{field}.png".sub("/", "_")
+    end
+    
+    # add directory portion
+    if output.nil?
+      filename = File.join(target_dir, generated_filename)
+    elsif File.directory?(output)
+      filename = File.join(output, generated_filename)
+    end
+  else # specific path+file is given so just use that
+    filename = output
+  end
+end
+
+# Calculate the average of groups of values from data
+# Params:
+# +data:: Array containing the data
+# +slice_size:: number of values each group of data should contain
+def average(data, slice_size)
+  reduced_data = []
+  data.each_slice(slice_size) do |slice|
+      reduced_data.push(slice.reduce(:+) / slice.size)
+  end
+  reduced_data
+end
+
+# Preprocesses the data contained in all datasets in the dataset_container
+# Groups of values are averaged with respect to timecode and actual data
+# Params:
+# +dataset_container:: Hash that holds the datasets and further information
+# +slice_size:: size of the group that averages are supposed to be calculated from
+def data_preprocessing(dataset_container, slice_size)
+  dataset_container[:datasets].each do |dataset|
+    timecode = dataset.data[0]
+    reduced_timecode = average(timecode, slice_size)
+
+    values = dataset.data[1].map { |value| value.to_f }
+    reduced_values = average(values, slice_size)
+
+    dataset.data = [reduced_timecode, reduced_values]
+  end
+end
+
 # Create the GnuplotDataSet that is going to be printed.
 # Params:
 # +timecode:: Array containing the timestamps
 # +values:: Array containing the actual values
 # +no_plot_key:: boolean to de-/activate plotkey
+# +smooth:: nil or smoothing algorithm
 # +file:: file
 def create_gnuplot_dataset(timecode, values, no_plot_key, smooth, file)
   Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
@@ -188,7 +238,7 @@ def read_options_and_arguments
     end
 
     opts[:smooth] = nil
-    parser.on('-s', '--smoothing ALGORITHM', 'Smoothes the graph using the given algorithm.',"\n") do |algorithm|
+    parser.on('-s', '--smoothing ALGORITHM', 'Smoothes the graph using the given algorithm.') do |algorithm|
         algorithms = [ 'unique', 'frequency', 'cumulative', 'cnormal', 'kdensity', 'unwrap',
           'csplines', 'acsplines', 'mcsplines', 'bezier', 'sbezier' ]
         if algorithms.index(algorithm)
@@ -197,6 +247,11 @@ def read_options_and_arguments
           puts "#{algorithm} is not a valid option as an algorithm."
           exit
         end
+    end
+
+    opts[:slice_size] = nil
+    parser.on('-a', '--average-over SLICE_SIZE', Integer, 'Calculates the everage for slice_size large groups of values.',"\n") do |slice_size|
+      opts[:slice_size] = slice_size
     end
 
     opts[:category] = nil
@@ -261,29 +316,11 @@ def read_options_and_arguments
   opts
 end
 
-def generate_filename(output, column, category, field, target_dir)
-  if output.nil? || File.directory?(output) # if an output file is not explicitly stated or if it's a directory
-    # generate filename
-    if column
-      generated_filename = "dstat-column#{column}.png"
-    else
-      generated_filename = "#{category}-#{field}.png".sub("/", "_")
-    end
-    
-    # add directory portion
-    if output.nil?
-      filename = File.join(target_dir, generated_filename)
-    elsif File.directory?(output)
-      filename = File.join(output, generated_filename)
-    end
-  else # specific path+file is given so just use that
-    filename = output
-  end
-end
-
 if __FILE__ == $0
   opts = read_options_and_arguments
-  dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column], opts[:no_plot_key], opts[:y_max], opts[:inversion], opts[:title], opts[:smooth])
+  dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column],
+    opts[:no_plot_key], opts[:y_max], opts[:inversion], opts[:title], opts[:smooth])
+  data_preprocessing(dataset_container, opts[:slice_size]) unless opts[:slice_size].nil?
   filename = generate_filename(opts[:output], opts[:column], opts[:category], opts[:field], opts[:target_dir])
   plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
 end
