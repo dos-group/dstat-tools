@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require 'dstat_plot'
+DstatPlot.run

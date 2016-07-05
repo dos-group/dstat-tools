@@ -280,13 +280,15 @@ def read_options_and_arguments
   opts
 end
 
-if __FILE__ == $0
-  opts = read_options_and_arguments
-  dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column],
-    opts[:no_plot_key], opts[:y_max], opts[:inversion], opts[:title], opts[:smooth])
-  data_preprocessing(dataset_container, opts[:slice_size]) unless opts[:slice_size].nil?
-  filename = generate_filename(opts[:output], opts[:column], opts[:category], opts[:field], opts[:target_dir])
-  plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
+class DstatPlot
+  def self.run
+    opts = read_options_and_arguments
+    dataset_container = read_data_from_csv(opts[:files],opts[:category], opts[:field], opts[:column], 
+      opts[:no_plot_key], opts[:y_max], opts[:inversion], opts[:title], opts[:smooth])
+    data_preprocessing(dataset_container, opts[:slice_size]) unless opts[:slice_size].nil?
+    filename = generate_filename(opts[:output], opts[:column], opts[:category], opts[:field], opts[:target_dir])
+    plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
+  end
 end
 
 class DstatPlot
