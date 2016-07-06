@@ -35,22 +35,11 @@ def plot(dataset_container, category, field, dry, filename)
 end
 
 def generate_filename(output, column, category, field, target_dir)
-  if output.nil? || File.directory?(output) # if an output file is not explicitly stated or if it's a directory
-    # generate filename
-    if column
-      generated_filename = "dstat-column#{column}.png"
-    else
-      generated_filename = "#{category}-#{field}.png".sub("/", "_")
-    end
-    
-    # add directory portion
-    if output.nil?
-      filename = File.join(target_dir, generated_filename)
-    elsif File.directory?(output)
-      filename = File.join(output, generated_filename)
-    end
-  else # specific path+file is given so just use that
-    filename = output
+  generated_filename = column ? "dstat-column#{column}.png" : "#{category}-#{field}.png".sub("/", "_")
+  if output
+    filename = File.directory?(output) ? File.join(output, generated_filename) : output
+  else
+    filename = File.join(target_dir, generated_filename)
   end
 end
 
@@ -93,16 +82,13 @@ end
 def create_gnuplot_dataset(timecode, values, no_plot_key, smooth, file)
   Gnuplot::DataSet.new([timecode, values]) do |gp_dataset|
     gp_dataset.with = "lines"
-    if no_plot_key then
-      gp_dataset.notitle
-    else
-      gp_dataset.title = (File.basename file).gsub('_', '\\_')
-    end
+    gp_dataset.title = (File.basename file).gsub('_', '\\_')
+    if no_plot_key then gp_dataset.notitle end
     gp_dataset.smooth = smooth unless smooth.nil?
   end
 end
 
-def analyze_header_create_plot_title(prefix, smooth, inversion, csv_header)
+def create_plot_title(prefix, smooth, inversion, csv_header)
   plot_title = "#{prefix} over time"
   if smooth then plot_title += " (smoothing: #{smooth})" end
   if csv_header[2].index("Host:")
@@ -131,7 +117,7 @@ def translate_to_column(category, field, csv)
   column = category_index + field_index
 end
 
-# returns the values from a headerless csv file
+# returns the values from a csv file
 def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inversion, title, smooth)
   plot_title = nil
   datasets = []
@@ -141,21 +127,11 @@ def read_data_from_csv(files, category, field, column, no_plot_key, y_max, inver
   files.each do |file|
     csv = CSV.read(file)
 
-    if column
-      if $verbose then puts "Reading from csv to get column #{column}." end
-      prefix = "dstat-column #{column}"
-    else
-      if $verbose then puts "Reading from csv to get #{category}-#{field}." end
-      column = translate_to_column(category, field, csv)
-      prefix = "#{category}-#{field}"
-    end
+    prefix = column ? "dstat-column #{column}" : "#{category}-#{field}"
+    if $verbose then puts "Reading from csv to get #{prefix}." end
     
     if plot_title.nil? # this only needs to be done for the first file
-      if title
-        plot_title = title
-      else
-        plot_title = analyze_header_create_plot_title(prefix, smooth, inversion != 0.0, csv[0..6])
-      end
+      plot_title = title ? title : create_plot_title(prefix, smooth, inversion != 0.0, csv[0..6])
     end
 
     if csv[2].index "Host:"
@@ -210,34 +186,28 @@ def read_options_and_arguments
       opts[:inversion] = value.nil? ? 100.0 : value
     end
 
-    opts[:no_plot_key] = false
     parser.on('-n', '--no-key', 'No plot key is printed.') do
       opts[:no_plot_key] = true
     end
 
-    opts[:dry] = false
     parser.on('-d', '--dry', 'Dry run. Plot is not saved to file but instead displayed with gnuplot.') do
       opts[:dry] = true
     end
 
-    opts[:output] = nil
     parser.on('-o','--output FILE|DIR', 'File or Directory that plot should be saved to. ' \
       'If a directory is given', 'the filename will be generated. Default is csv file directory.') do |path|
       opts[:output] = path
     end
 
-    opts[:y_max]
     parser.on('-y', '--y-range RANGE', Float, 'Sets the y-axis range. Default is 105. ' \
       'If a value exceeds this range,', '"autoscale" is enabled.') do |range|
       opts[:y_max] = range      
     end
 
-    opts[:title] = nil
     parser.on('-t', '--title TITLE', 'Override the default title of the plot.') do |title|
       opts[:title] = title
     end
 
-    opts[:smooth] = nil
     parser.on('-s', '--smoothing ALGORITHM', 'Smoothes the graph using the given algorithm.') do |algorithm|
         algorithms = [ 'unique', 'frequency', 'cumulative', 'cnormal', 'kdensity', 'unwrap',
           'csplines', 'acsplines', 'mcsplines', 'bezier', 'sbezier' ]
@@ -249,22 +219,18 @@ def read_options_and_arguments
         end
     end
 
-    opts[:slice_size] = nil
     parser.on('-a', '--average-over SLICE_SIZE', Integer, 'Calculates the everage for slice_size large groups of values.',"\n") do |slice_size|
       opts[:slice_size] = slice_size
     end
 
-    opts[:category] = nil
     parser.on('-c', '--category CATEGORY', 'Select the category.') do |category|
       opts[:category] = category
     end
 
-    opts[:field] = nil
     parser.on('-f', '--field FIELD' , 'Select the field.') do |field|
       opts[:field] = field
     end
 
-    opts[:column] = nil
     parser.on('-l', '--column COLUMN', 'Select the desired column directly.', "\n") do |column|
       unless opts[:category] && opts[:field]  # -c and -f override -l
         opts[:column] = column.to_i
@@ -285,10 +251,9 @@ def read_options_and_arguments
   optparse.parse!
   if $verbose then puts "opts: #{opts.inspect}" end
 
-  if opts[:category].nil? || opts[:category].nil?
+  if opts[:category].nil? || opts[:field].nil?
     if opts[:column].nil?
-      puts "[Error] (-c CATEGORY and -f FIELD) or (-l COLUMN) are mandatory parameters.\n\n"
-      puts optparse
+      puts "[Error] (-c CATEGORY and -f FIELD) or (-l COLUMN) are mandatory parameters.\n\n #{optparse}"
       exit
     end
   end
@@ -304,9 +269,7 @@ def read_options_and_arguments
     files = files.sort
   else
     opts[:target_dir] = File.dirname ARGV.first
-    ARGV.each do |filename|
-      files.push filename
-    end
+    ARGV.each { |filename| files.push filename }
   end
   puts "Plotting data from #{files.count} file(s)."
   opts[:files] = files
