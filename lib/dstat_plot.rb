@@ -290,11 +290,3 @@ class DstatPlot
     plot(dataset_container, opts[:category], opts[:field], opts[:dry], filename)
   end
 end
-
-class DstatPlot
-  def test_method?
-    true
-  end
-  
-  
-end
