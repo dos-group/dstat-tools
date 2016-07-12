@@ -43,8 +43,8 @@ dstat_plot.rb [options] -l COLUMN [directory | file1 file2 ...]
     -y, --y-range RANGE              Sets the y-axis range. Default is 105. If a value exceeds
                                      this range, "autoscale" is enabled.
     -t, --title TITLE                Override the default title of the plot.
-    -s, --smoothing ALGORITHM        Smoothes the graph using the given algorithm.
-    -a, --average-over SLICE_SIZE    Calculates the everage for slice_size large groups of values.
+    -s, --smoothing ALGORITHM        Smooths the graph using the given algorithm.
+    -a, --average-over SLICE_SIZE    Calculates the average for slice_size large groups of values.
 
     -c, --category CATEGORY          Select the category.
     -f, --field FIELD                Select the field.
