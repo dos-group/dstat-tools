@@ -5,23 +5,22 @@ require 'spec_helper'
 require 'csv'
 
 RSpec.describe 'dstat_plot' do
+  csv = CSV.read('example.csv')
 
-  csv = CSV.read("example.csv")
-
-  describe "#create_gnuplot_dataset" do
-    it "creates a gnuplot dataset" do
-        test = 5
-        expect(test).to eq(5)
-        # gp_dataset = create_gnuplot_dataset ()
-        # expect(gp_dataset).to eq(45)
+  describe '#create_gnuplot_dataset' do
+    it 'creates a gnuplot dataset' do
+      test = 5
+      expect(test).to eq(5)
+      # gp_dataset = create_gnuplot_dataset ()
+      # expect(gp_dataset).to eq(45)
     end
   end
 
-  describe "#create_plot_title" do
-    context "with inversion" do
-      it "analyzes header and creates a plot title" do
+  describe '#create_plot_title' do
+    context 'with inversion' do
+      it 'analyzes header and creates a plot title' do
         csv_header = csv[0..6]
-        prefix = "Prefix"
+        prefix = 'Prefix'
         smooth = false
         inversion = false
         plot_title = create_plot_title(prefix, smooth, inversion, csv_header)
@@ -30,10 +29,16 @@ RSpec.describe 'dstat_plot' do
     end
   end
 
-  describe "#translate_to_column" do
-    it "translates category and field to the correct column index" do
-      column = translate_to_column("cpu1 usage", "usr", csv)
+  describe '#translate_to_column' do
+    it 'translates category and field to the correct column index' do
+      column = translate_to_column('cpu1 usage', 'usr', csv)
       expect(column).to eq(23)
+    end
+  end
+
+  describe '#index_valid' do
+    it 'checks if the parameter is something or nil' do
+      expect(true).to eq(true)
     end
   end
 end
