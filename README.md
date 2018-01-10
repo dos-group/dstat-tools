@@ -73,20 +73,20 @@ ruby dstat_plot.rb -l 11 example.csv
 
 (N is the cpu core index for 0..n cores)
 
-Categoriy    | Field | Column  | Categoriy | Field | Column | Categoriy | Field | Column |
--------------|-------|---------|-----------|-------|--------|-----------|-------|--------|
-epoch        | epoch |  0      | ...         | sys   | 12      | ...         | send  | 24      |
-memory usage | used  |  1      | ...         | idl   | 13      | net/eth0    | recv  | 25      |
- ...         | buff  |  2      | ...         | wai   | 14      | ...         | send  | 26      |
- ...         | cach  |  3      | ...         | hiq   | 15      | dsk/total   | read  | 27      |
- ...         | free  |  4      | ...         | siq   | 16      | ...         | writ  | 28      |
-swap         | used  |  5      | cpuN usage   | usr   | 17      | dsk/sda     | read  | 29      |
- ...         | free  |  6      | ...         | sys   | 18      | ...         | writ  | 30      |
-system       | int   |  7      | ...         | idl   | 19      | io/total    | read  | 31      |
- ...         | csv   |  8      | ...         | wai   | 20      | ...         | writ  | 32      |
-paging       | in    |  9      | ...         | hiq   | 21      | io/sda      | read  | 33      |
- ...         | out   |  10     | ...         | siq   | 22      | ...         | writ  | 34      |
-total cpu usage | usr | 11     | net/total   | recv  | 23      | | | |
+Categoriy    | Field | Column  | | Categoriy | Field | Column | | Categoriy | Field | Column |
+-------------|-------|---------|-|-----------|-------|--------|-|-----------|-------|--------|
+epoch        | epoch |  0      | |...         | sys   | 12      | | ...         | send  | 24      |
+memory usage | used  |  1      | |...         | idl   | 13      | |net/eth0    | recv  | 25      |
+ ...         | buff  |  2      | |...         | wai   | 14      | |...         | send  | 26      |
+ ...         | cach  |  3      | |...         | hiq   | 15      | |dsk/total   | read  | 27      |
+ ...         | free  |  4      | |...         | siq   | 16      | |...         | writ  | 28      |
+swap         | used  |  5      | |cpuN usage   | usr   | 17      | |dsk/sda     | read  | 29      |
+ ...         | free  |  6      | |...         | sys   | 18      | |...         | writ  | 30      |
+system       | int   |  7      | |...         | idl   | 19      | |io/total    | read  | 31      |
+ ...         | csv   |  8      | |...         | wai   | 20      | |...         | writ  | 32      |
+paging       | in    |  9      | |...         | hiq   | 21      | |io/sda      | read  | 33      |
+ ...         | out   |  10     | |...         | siq   | 22      | |...         | writ  | 34      |
+total cpu usage | usr | 11     | |net/total   | recv  | 23      | | | | |
 
 
 
